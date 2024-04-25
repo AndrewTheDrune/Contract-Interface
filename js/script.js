@@ -1,6 +1,5 @@
 import { abi } from "./abi.js";
 import { displayTransfers } from "./displayTransfers.js";
-// import { createTransaction } from "./createTransaction.js";
 const contractAddress = "0xdcC1A9cc4B510846fbE001201236Cddbb3741dA3";
 
 const header = document.querySelector('header');
@@ -27,7 +26,6 @@ function getContract(){
 async function createAccountsList(){
     web3 = new Web3(new Web3.providers.HttpProvider('HTTP://127.0.0.1:8545'));
     accounts = await web3.eth.getAccounts();
-    console.log(accounts);
     createList(accounts);
 }
 
@@ -51,7 +49,6 @@ async function logIn(){
 	balanceEther = await web3.utils.fromWei(balanceWei);
 	accountText.innerHTML = accountText.innerHTML + " " + userAccount;
 	balanceText.innerHTML = balanceText.innerHTML + " " + balanceEther;
-	console.log(getContract());
 	displayTransfers(getContract(), userAccount, divMain, web3);
 }
 
@@ -80,7 +77,7 @@ async function createTransaction(){
 	const formSelect = document.createElement("select");
 	const formCodeInput = document.createElement("input");
 	const formAmountInput = document.createElement("input");
-	const formButton = document.createElement("button");
+	const formButton = document.createElement("input");
 	
 	form.className = "transaction-form";
 	formSelect.className = "form-select";
@@ -88,6 +85,7 @@ async function createTransaction(){
 	formAmountInput.className = "form-input";
 	formButton.className = "form-submit-button";
 	
+	formButton.type = "submit";
 	formButton.innerHTML = "Перевести";
 
 	formHeader.innerHTML = "Новый перевод";
@@ -98,7 +96,7 @@ async function createTransaction(){
 
 	formAmountInput.required = true;
 	formAmountInput.type = "number";
-	formAmountInput.min = "0.1";
+	formAmountInput.min = "0.000000000000000001";
 	formAmountInput.max = balanceEther;
 	formAmountInput.step = "any";
 	formAmountInput.placeholder = "Введите сумму перевода...";
@@ -113,11 +111,7 @@ async function createTransaction(){
 
 	async function createTransfer(event){
 		event.preventDefault();
-		const gasLimit = 5000000;
-		console.log(Number(balanceEther));
-		console.log(Number(formAmountInput.value));
-		console.log(Number(formAmountInput.value) > Number(balanceEther));
-
+		const gasLimit = 500000;
 
 		if (formAmountInput.value > 0){
 			if (Number(formAmountInput.value) > Number(balanceEther)){
@@ -126,24 +120,22 @@ async function createTransaction(){
 				formAmountInput.value = balanceEther;
 			}
 			else{
-
 				let amountEther = await web3.utils.toWei(formAmountInput.value);
 				getContract().methods.initiateTransfer(formSelect.value, formCodeInput.value).send({ from: userAccount, value: amountEther, gas: gasLimit});
 				formDialog.close();	
 				formDialog.remove();
-			}
-			
+			}			
 		}
 		else{
 			alert("Поле не должно быть пустым");
 		}		
 
 		// Update transaction cards
-		// let transactionCards = divMain.getElementsByClassName("transactions-history-div");
-		// for (let card = 0; card < transactionCards.length; card++) {
-		// 	transactionCards[card].remove();
-		// 	console.log(transactionCards[card])
-		// }
+		let transactionCards = divMain.getElementsByClassName("transactions-history-div");
+		for (let card = 0; card < transactionCards.length; card++) {
+			transactionCards[card].remove();
+			console.log(transactionCards[card])
+		}
 	}
 
 	formButton.addEventListener("click", createTransfer);
@@ -159,8 +151,6 @@ async function createTransaction(){
 }
 
 createAccountsList();
-// const myContract = getContract();
-console.log(getContract());
 
 buttonLogIn.addEventListener("click", logIn);
 mainButtonExit.addEventListener("click", logOut);
