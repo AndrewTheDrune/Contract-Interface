@@ -31,19 +31,6 @@ export let abi = [
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "getTransferRequestsLength",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "arrayLength",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
 		"inputs": [
 			{
 				"internalType": "address",
@@ -62,18 +49,12 @@ export let abi = [
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "numberOfAttempts",
+		"inputs": [],
+		"name": "getTransferRequestsLength",
 		"outputs": [
 			{
 				"internalType": "uint256",
-				"name": "",
+				"name": "arrayLength",
 				"type": "uint256"
 			}
 		],

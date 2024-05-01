@@ -1,47 +1,61 @@
-export async function displayTransfers(myContract, userAccount, divMain, web3){
+export async function displayTransfers(myContract, userAccount, divMain, web3, balanceWei, balanceEther, balanceText){
 	let transfersArrayLength = await myContract.methods.getTransferRequestsLength().call();
 
 	for (let i = transfersArrayLength - 1; i >= 0; i--) {
 		let transactionsHistoryObject = await myContract.methods.transferRequests(i).call();
-
-        const divTransactionsHistory = document.createElement("div");
+		
+		const divTransactionsHistory = document.createElement("div");
 		divTransactionsHistory.className = "transactions-history-div";
-		divMain.append(divTransactionsHistory);
+
 		divTransactionsHistory.id = i;
 
-		if (userAccount == transactionsHistoryObject.to){
-			
-			
-			// address: from
-			const transactionsListAccountFromTitle = document.createElement("h3");
-			transactionsListAccountFromTitle.className = "transactions-list-title";
-			const transactionsListAccountFromText = document.createElement("h3");
-			transactionsListAccountFromText.className = "transactions-list-text";
-			
-			transactionsListAccountFromTitle.innerHTML = "Отправитель:";
-			transactionsListAccountFromText.innerHTML = transactionsHistoryObject.from;
-			divTransactionsHistory.append(transactionsListAccountFromTitle, transactionsListAccountFromText);
-			
-			// uint: amount
-			const transactionsListAmountTitle = document.createElement("h3");
-			transactionsListAmountTitle.className = "transactions-list-title";
-			const transactionsListAmountText = document.createElement("h3");
-			transactionsListAmountText.className = "transactions-list-text";
-			
-			transactionsListAmountTitle.innerHTML = "Сумма перевода:";
-			let amountEther = await web3.utils.fromWei(transactionsHistoryObject.amount);
-			transactionsListAmountText.innerHTML = amountEther;
-			divTransactionsHistory.append(transactionsListAmountTitle, transactionsListAmountText);
-			
-			// bool codeWordConfirmed
-			const transactionsListCodeConfirmTitle = document.createElement("h3");
-			transactionsListCodeConfirmTitle.className = "transactions-list-title";
-			const transactionsListCodeConfirmText = document.createElement("h3");
-			transactionsListCodeConfirmText.className = "transactions-list-text";
+        // address: from/to
+        const transactionsListAccountTitle = document.createElement("h3");
+		transactionsListAccountTitle.className = "transactions-list-title";
+		const transactionsListAccountText = document.createElement("h3");
+		transactionsListAccountText.className = "transactions-list-text";
 
-			transactionsListCodeConfirmTitle.innerHTML = "Статус перевода:";
+        // uint: amount
+        const transactionsListAmountTitle = document.createElement("h3");
+		transactionsListAmountTitle.className = "transactions-list-title";
+		const transactionsListAmountText = document.createElement("h3");
+		transactionsListAmountText.className = "transactions-list-text";
+        		
+		transactionsListAmountTitle.innerHTML = "Сумма перевода:";
+		let amountEther = await web3.utils.fromWei(transactionsHistoryObject.amount);
+		transactionsListAmountText.innerHTML = amountEther;
+
+        // bool codeWordConfirmed
+        const transactionsListCodeConfirmTitle = document.createElement("h3");
+		transactionsListCodeConfirmTitle.className = "transactions-list-title";
+		const transactionsListCodeConfirmText = document.createElement("h3");
+		transactionsListCodeConfirmText.className = "transactions-list-text";
+		transactionsListCodeConfirmTitle.innerHTML = "Статус перевода:";
+
+		if (userAccount == transactionsHistoryObject.to){
+			divMain.append(divTransactionsHistory);
+
+			// address: from			
+			transactionsListAccountTitle.innerHTML = "Отправитель:";
+			transactionsListAccountText.innerHTML = transactionsHistoryObject.from;
+			divTransactionsHistory.append(transactionsListAccountTitle, transactionsListAccountText);
+			
+            // uint: amount
+			divTransactionsHistory.append(transactionsListAmountTitle, transactionsListAmountText);
+
+			// bool codeWordConfirmed
 			divTransactionsHistory.append(transactionsListCodeConfirmTitle);
 			
+            // bool canceled
+		    if (transactionsHistoryObject.canceled) {
+		    	const transactionsListCanceledText = document.createElement("h3");
+		    	transactionsListCanceledText.className = "transactions-list-text";
+		    	transactionsListCanceledText.innerHTML = "Перевод отменён";
+		    	divTransactionsHistory.style.backgroundColor = "rgb(185, 185, 185)";
+		    	divTransactionsHistory.style.boxShadow = "0 0 35px rgb(185, 185, 185)";
+		    	divTransactionsHistory.append(transactionsListCanceledText);
+		    }
+
 			if (!transactionsHistoryObject.canceled){
 				if (transactionsHistoryObject.codeWordConfirmed) {
 					transactionsListCodeConfirmText.innerHTML = "Подтверждён";
@@ -77,71 +91,52 @@ export async function displayTransfers(myContract, userAccount, divMain, web3){
 					divTransactionsHistory.addEventListener("click", function(){
 					buttonConfirm.style.display = getComputedStyle(buttonConfirm).display == "block" ? "none" : "block";
 					formInput.style.display = getComputedStyle(formInput).display == "block" ? "none" : "block";
-				});	
+                    });	               
 
-				formInput.addEventListener("click", function(event){
-					event.stopPropagation();
-				});
-				
-				async function confirmTransaction(event){
-					event.preventDefault();
-					event.stopPropagation();
-					
-					const gasLimit = 5000000;
-					await myContract.methods.confirmTransfer(divTransactionsHistory.id, formInput.value).send({ from: userAccount, value: transfer.amount, gas: gasLimit });
-					
-					// Update transaction cards
-					// let transactionCards = divMain.getElementsByClassName("transactions-history-div");
-					// for (let card = 0; i < transactionCards.length; i++) {
-					// 	card.remove();
-					// 	console.log(card.id)						
-					// }
+				    formInput.addEventListener("click", function(event){
+				    	event.stopPropagation();
+				    });
+                
+					// Confirm transfer
+				    async function confirmTransaction(event){
+				    	event.preventDefault();
+				    	event.stopPropagation();
+                        
+						const gasLimit = 500000;
+                        if (transfer.codeWord == formInput.value) {                            
+                            await myContract.methods.confirmTransfer(divTransactionsHistory.id, formInput.value).send({ from: userAccount, gas: gasLimit });
+						}
+						else{
+							await myContract.methods.cancelTransaction(divTransactionsHistory.id).send({ from: transactionsHistoryObject.from, gas: gasLimit });
+						}
 
-				}			
-				buttonConfirm.addEventListener("click", confirmTransaction);
-				}
-			}			
-
-			// bool canceled
-			if (transactionsHistoryObject.canceled) {
-				const transactionsListCanceledText = document.createElement("h3");
-				transactionsListCanceledText.className = "transactions-list-text";
-				transactionsListCanceledText.innerHTML = "Перевод отменён";
-				divTransactionsHistory.style.backgroundColor = "rgb(185, 185, 185)";
-				divTransactionsHistory.style.boxShadow = "0 0 35px rgb(185, 185, 185)";
-				divTransactionsHistory.append(transactionsListCanceledText);
-			}
-		}	
+						// Update transaction cards
+						while (divMain.querySelector(".transactions-history-div")) {
+							let divTransactionsHistory = divMain.querySelector(".transactions-history-div");
+							divTransactionsHistory.remove();
+						}
+						displayTransfers(myContract, userAccount, divMain, web3, balanceWei, balanceEther, balanceText);
+						balanceWei = await web3.eth.getBalance(userAccount);
+						balanceEther = await web3.utils.fromWei(balanceWei);
+						balanceText.innerHTML = balanceText.innerHTML.split(" ")[0];
+						balanceText.innerHTML = balanceText.innerHTML + " " + balanceEther;
+				    }			
+				    buttonConfirm.addEventListener("click", confirmTransaction);
+                }
+            }
+		}		
 		else if (userAccount == transactionsHistoryObject.from) {
+			divMain.append(divTransactionsHistory);
 
 			// address: to
-			const transactionsListAccountToTitle = document.createElement("h3");
-			transactionsListAccountToTitle.className = "transactions-list-title";
-			const transactionsListAccountToText = document.createElement("h3");
-			transactionsListAccountToText.className = "transactions-list-text";
+			transactionsListAccountTitle.innerHTML = "Получатель:";
+			transactionsListAccountText.innerHTML = transactionsHistoryObject.to;
+			divTransactionsHistory.append(transactionsListAccountTitle, transactionsListAccountText);
 
-			transactionsListAccountToTitle.innerHTML = "Получатель:";
-			transactionsListAccountToText.innerHTML = transactionsHistoryObject.to;
-			divTransactionsHistory.append(transactionsListAccountToTitle, transactionsListAccountToText);
-
-			// uint: amount
-			const transactionsListAmountTitle = document.createElement("h3");
-			transactionsListAmountTitle.className = "transactions-list-title";
-			const transactionsListAmountText = document.createElement("h3");
-			transactionsListAmountText.className = "transactions-list-text";
-
-			transactionsListAmountTitle.innerHTML = "Сумма перевода:";
-			let amountEther = await web3.utils.fromWei(transactionsHistoryObject.amount);
-			transactionsListAmountText.innerHTML = amountEther;
-			divTransactionsHistory.append(transactionsListAmountTitle, transactionsListAmountText);
-
+            // uint: amount
+            divTransactionsHistory.append(transactionsListAmountTitle, transactionsListAmountText);
+            
 			// bool codeWordConfirmed
-			const transactionsListCodeConfirmTitle = document.createElement("h3");
-			transactionsListCodeConfirmTitle.className = "transactions-list-title";
-			const transactionsListCodeConfirmText = document.createElement("h3");
-			transactionsListCodeConfirmText.className = "transactions-list-text";
-
-			transactionsListCodeConfirmTitle.innerHTML = "Статус перевода:";
 			divTransactionsHistory.append(transactionsListCodeConfirmTitle);
 			
 			if (!transactionsHistoryObject.canceled) {				
@@ -155,17 +150,17 @@ export async function displayTransfers(myContract, userAccount, divMain, web3){
 				}
 
 				divTransactionsHistory.append(transactionsListCodeConfirmText);
-			}				
-
-			// bool canceled
-			if (transactionsHistoryObject.canceled) {
-				const transactionsListCanceledText = document.createElement("h3");
-				transactionsListCanceledText.className = "transactions-list-text";
-				transactionsListCanceledText.innerHTML = "Перевод отменён";
-				divTransactionsHistory.style.backgroundColor = "rgb(185, 185, 185)";
-				divTransactionsHistory.style.boxShadow = "0 0 10px rgb(160, 160, 160)";
-				divTransactionsHistory.append(transactionsListCanceledText);
 			}
+
+            // bool canceled
+		    if (transactionsHistoryObject.canceled) {
+		    	const transactionsListCanceledText = document.createElement("h3");
+		    	transactionsListCanceledText.className = "transactions-list-text";
+		    	transactionsListCanceledText.innerHTML = "Перевод отменён";
+		    	divTransactionsHistory.style.backgroundColor = "rgb(185, 185, 185)";
+		    	divTransactionsHistory.style.boxShadow = "0 0 35px rgb(185, 185, 185)";
+		    	divTransactionsHistory.append(transactionsListCanceledText);
+		    }
 
 			// buttonCancel
 			let transfer = await myContract.methods.transferRequests(divTransactionsHistory.id).call();
@@ -180,15 +175,24 @@ export async function displayTransfers(myContract, userAccount, divMain, web3){
 					buttonCancel.style.display = getComputedStyle(buttonCancel).display == "block" ? "none" : "block";
 				});
 
+				// Cancel transfer
 				async function cancelTransfer(event){
 					event.stopPropagation();
 					event.preventDefault();
 
-					const gasLimit = 5000000;
-					await myContract.methods.cancelTransaction(divTransactionsHistory.id).send({ from: userAccount, value: transfer.amount, gas: gasLimit });
-					console.log(divTransactionsHistory.id);
-					console.log(transfer.amount);
-
+					const gasLimit = 500000;
+					await myContract.methods.cancelTransaction(divTransactionsHistory.id).send({ from: userAccount, gas: gasLimit });
+									
+					// Update transaction cards
+					while (divMain.querySelector(".transactions-history-div")) {
+						let divTransactionsHistory = divMain.querySelector(".transactions-history-div");
+						divTransactionsHistory.remove();
+					}
+					displayTransfers(myContract, userAccount, divMain, web3, balanceWei, balanceEther, balanceText);
+					balanceWei = await web3.eth.getBalance(userAccount);
+					balanceEther = await web3.utils.fromWei(balanceWei);
+					balanceText.innerHTML = balanceText.innerHTML.split(" ")[0];
+					balanceText.innerHTML = balanceText.innerHTML + " " + balanceEther;
 				}
 				buttonCancel.addEventListener("click", cancelTransfer);
 			}
