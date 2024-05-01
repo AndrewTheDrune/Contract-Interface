@@ -237,7 +237,7 @@ dialog{
     display: flex;
 }
 
-.main-button-exit {
+.main-button-header {
     margin: 1em;
     padding: 1em;
     border: none;
@@ -248,7 +248,7 @@ dialog{
     cursor: pointer;
 }
 
-.main-button-exit:hover {
+.main-button-header:hover {
     padding: 1em;
     border: none;
     border-radius: 1em;
@@ -259,7 +259,7 @@ dialog{
     cursor: pointer;
 }
 
-.main-button-exit:active {
+.main-button-header:active {
     padding: 1em;
     border: none;
     border-radius: 1em;
